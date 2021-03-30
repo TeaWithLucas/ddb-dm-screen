@@ -43,6 +43,12 @@ const positiveSign = '+', negativeSign = '-';
 
 const autoUpdateDefault = true;
 const updateDurationDefault = 60;
+
+const showAbilitiesDefault = true;
+const showSavingThrowsDefault = true;
+const showSensesDefault = true;
+const showClassesDefault = true;
+
 const currenciesDefault = {gold : 0};
 const currenciesTypeDefault = {
     platinum : { name: 'Platinum', conversion: 10 },
@@ -106,6 +112,31 @@ var controlsHTML = `
 		        </div>
 		      </div>
 		    </div>
+          </div>
+          <div class="gs-views gs-container gs-col-container">
+            <div class="gs-header gs-header-controls">Visible Sections</div>
+            <div class="gs-container gs-row-container">
+              <div class="gs-view-controls gs-container gs-col-container">
+                <div class="gs-auto-update-controls gs-container gs-col-container">
+                  <div class="gs-form-field gs-row-container">
+                    <label for="gs-show-abilities"><span>Abilities</span></label>
+                    <input type="checkbox" name="gs-show-abilities" id="gs-show-abilities" value="false">
+                  </div>
+                  <div class="gs-form-field gs-row-container">
+                    <label for="gs-show-saving-throws"><span>Saving Throws</span></label>
+                    <input type="checkbox" name="gs-show-saving-throws" id="gs-show-saving-throws" value="false">
+                  </div>
+                  <div class="gs-form-field gs-row-container">
+                    <label for="gs-show-senses"><span>Senses</span></label>
+                    <input type="checkbox" name="gs-show-senses" id="gs-show-senses" value="false">
+                  </div>
+                  <div class="gs-form-field gs-row-container">
+                    <label for="gs-show-classes"><span>Classes</span></label>
+                    <input type="checkbox" name="gs-show-classes" id="gs-show-classes" value="false">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 		  <div class="gs-stored gs-container">
             <div class="gs-header gs-header-controls">Stored</div>
@@ -766,9 +797,10 @@ function insertCampaignElements() {
     console.log("Inseting Campaign Elements");
 	let campaignPrefix = scriptVarPrefix + "-" + campaignID;
     $(campaignElementTarget + " > div:nth-child(1)").after(controlsHTML);
-	campaignNode = $(".gs-campaign");
+    campaignNode = $(".gs-campaign");
     insertControls(campaignNode, campaignPrefix);
-	insertStoredElements(campaignNode, campaignPrefix);
+    insertVisibilityControls(campaignNode, campaignPrefix);
+    insertStoredElements(campaignNode, campaignPrefix);
 }
 
 function insertControls(parent, campaignPrefix) {
@@ -796,6 +828,72 @@ function insertControls(parent, campaignPrefix) {
         GM_setValue(campaignPrefix + "-updateDuration", updatedAutoDuration);
         GM_setValue(scriptVarPrefix + "-updateDuration", updatedAutoDuration);
     });
+}
+
+function insertVisibilityControls(parent, campaignPrefix) {
+    console.log("Inseting Visibility Controls");
+
+    let controlsNode = parent.find('.gs-views');
+
+    let showAbilities = controlsNode.find('input[name ="gs-show-abilities"]');
+    let showSavingThrows = controlsNode.find('input[name ="gs-show-saving-throws"]');
+    let showSenses = controlsNode.find('input[name ="gs-show-senses"]');
+    let showClasses = controlsNode.find('input[name ="gs-show-classes"]');
+
+    // Loads ideally value set for this campaign, if not found it loads the last saved value otherwise it defaults
+    let showAbilitiesLoaded = GM_getValue(campaignPrefix + "-showAbilities", GM_getValue(scriptVarPrefix + "-showAbilities", showAbilitiesDefault));
+    let showSavingThrowsLoaded = GM_getValue(campaignPrefix + "-showSavingThrows", GM_getValue(scriptVarPrefix + "-showSavingThrows", showSavingThrowsDefault));
+    let showSensesLoaded = GM_getValue(campaignPrefix + "-showSenses", GM_getValue(scriptVarPrefix + "-showSenses", showSensesDefault));
+    let showClassesLoaded = GM_getValue(campaignPrefix + "-showClasses", GM_getValue(scriptVarPrefix + "-showClasses", showClassesDefault));
+
+    showAbilities.prop('checked', showAbilitiesLoaded);
+    showSavingThrows.prop('checked', showSavingThrowsLoaded);
+    showSenses.prop('checked', showSensesLoaded);
+    showClasses.prop('checked', showClassesLoaded);
+
+    showAbilities.change(function () {
+        let updatedShowAbilities = parseBool($(this).prop("checked"));
+        GM_setValue(campaignPrefix + "-showAbilities", updatedShowAbilities);
+        GM_setValue(scriptVarPrefix + "-showAbilities", updatedShowAbilities);
+        updateVisibility();
+    });
+    showSavingThrows.change(function () {
+        let updatedShowSavingThrows = parseBool($(this).prop("checked"));
+        GM_setValue(campaignPrefix + "-showSavingThrows", updatedShowSavingThrows);
+        GM_setValue(scriptVarPrefix + "-showSavingThrows", updatedShowSavingThrows);
+        updateVisibility();
+    });
+    showSenses.change(function () {
+        let updatedShowSensesUpdate = parseBool($(this).prop("checked"));
+        GM_setValue(campaignPrefix + "-showSenses", updatedShowSensesUpdate);
+        GM_setValue(scriptVarPrefix + "-showSenses", updatedShowSensesUpdate);
+        updateVisibility();
+    });
+    showClasses.change(function () {
+        let updatedShowClasses = parseBool($(this).prop("checked"));
+        GM_setValue(campaignPrefix + "-showClasses", updatedShowClasses);
+        GM_setValue(scriptVarPrefix + "-showClasses", updatedShowClasses);
+        updateVisibility();
+    });
+
+    updateVisibility();
+}
+
+function updateVisibility() {
+    console.log("Updating data visibility");
+
+    let abilities = $('input[name ="gs-show-abilities"]').is(':checked');
+    let saves = $('input[name ="gs-show-saving-throws"]').is(':checked');
+    let senses = $('input[name ="gs-show-senses"]').is(':checked');
+    let classes = $('input[name ="gs-show-classes"]').is(':checked');
+
+    $('.gs-main-able').toggle(abilities);
+    $('.gs-main-saves').toggle(saves);
+    $('.gs-main-able').parents('.gs-container').toggle(abilities || saves);
+
+    $('.gs-senses').toggle(senses);
+    $('.gs-classes').toggle(classes);
+    $('.gs-senses').parents('.gs-container').toggle(senses || classes);
 }
 
 function insertStoredElements(parent, campaignPrefix) {
